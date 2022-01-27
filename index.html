@@ -1,0 +1,1132 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Goodwill Good Flow Training: Furniture Processor</title>
+    <link href="css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <link href="css/jquery-ui.min.css" rel="stylesheet" crossorigin="anonymous">
+    <script src="js/jquery-3.4.1.min.js" crossorigin="anonymous"></script>    
+	<script src="js/bootstrap.min.js" crossorigin="anonymous"></script>
+    <script src="js/jquery-ui.min.js" crossorigin="anonymous"></script>
+    <script src="js/createjs.min.js" crossorigin="anonymous"></script>
+    <script>
+	var videoPlayer;
+	var dialog;
+	var chk_empty= "&#9744;";
+	var chk_checked = "&#9745;";
+	var chk_current = "&raquo;";
+	var curid = "module_introduction";
+	var sound  = "on";
+	var studentname = "";
+	var moScormApi;
+	var local = false;
+	
+	var arrLessons = new Array();
+
+	var objMenu = new Object();
+	addMenu("show","show",0,'video','module_introduction','','Module Introduction','module_introduction.mp4');
+	addMenu("hide","hide",0,'video','lesson1_what_furniture_processors_do','','Lesson 1: What Furniture Processors Do','what_furniture_processors_do.mp4');
+	addMenu("show","show",1,'video','lesson1_introduction','lesson1_introduction','Lesson 1: Introduction','lesson_1_introduction.mp4');
+	addMenu("show","show",1,'video','lesson1_furniture_processor_work_flow','lesson1_furniture_processor_work_flow','Furniture Processor Work Flow','furniture_processor_work_flow.mp4');
+	addMenu("show","show",1,'video','lesson1_types_of_furniture_items','lesson1_types_of_furniture_items','Types of Furniture Items','types_of_furniture_items.mp4');
+	addMenu("show","show",1,'video','lesson1_getting_started','lesson1_getting_started','Getting Started','getting_started.mp4');
+	addMenu("show","show",1,'video','lesson1_organizing_your_workstation','lesson1_organizing_your_workstation','Organizing Your Workstation','organizing_your_workstation.mp4');
+	addMenu("hide","hide",1,'html','lesson1_activity_starting_your_day','lesson1_activity_starting_your_day','Activity: Starting Your Day','');
+	
+	addMenu("hide","hide",0,'video','lesson2_inspecting_furniture','','Lesson 2: Inspecting Furniture','lesson_2_inspecting_furniture.mp4');
+	addMenu("show","show",1,'video','lesson2_introduction','lesson2_introduction','Lesson 2: Introduction','lesson_2_introduction.mp4');
+	addMenu("show","show",1,'video','lesson2_inspecting_furniture2','lesson2_inspecting_furniture2','Inspecting Furniture','inspecting_furniture.mp4');
+	addMenu("show","show",1,'video','lesson2_unacceptable_items','lesson2_unacceptable_items','Unacceptable Items','unnacceptable_items.mp4');
+	addMenu("hide","hide",1,'html','lesson2_activity_stay_or_go','lesson2_activity_stay_or_go','Activity: Stay or Go?','');
+	
+	addMenu("hide","hide",0,'video','lesson3_processing_saleable_items','','Lesson 3: Processing Saleable Items','lesson_3_processing_saleable_items.mp4');
+	addMenu("show","show",1,'video','lesson3_introduction','lesson3_introduction','Lesson 3: Introduction','lesson_3_introduction.mp4');
+	addMenu("show","show",1,'video','lesson3_deciding_on_the_right_price','lesson3_deciding_on_the_right_price','Deciding on the Right Price','deciding_on_the_right_price.mp4');
+	addMenu("show","show",1,'video','lesson3_sales_tickets','lesson3_sales_tickets','Sales Tickets','sales_tickets.mp4');
+	addMenu("show","show",1,'video','lesson3_final_check','lesson3_final_check','Final Check','final_check.mp4');
+	addMenu("hide","hide",1,'html','lesson3_activity_pricing_furniture','lesson3_activity_pricing_furniture','Activity: Pricing Furniture','');
+	
+	addMenu("hide","hide",0,'video','lesson4_the_sales_floor','','Lesson 4: The Sales Floor','lesson_4_the_sales_floor.mp4');
+	addMenu("show","show",1,'video','lesson4_introduction','lesson4_introduction','Lesson 4: Introduction','lesson_4_introduction.mp4');
+	addMenu("show","show",1,'video','lesson4_sales_floor_inventory','lesson4_sales_floor_inventory','Sales Floor Inventory','sales_floor_inventory.mp4');
+	addMenu("show","show",1,'video','lesson4_rotating_inventory','lesson4_rotating_inventory','Rotating Inventory','rotating_inventory.mp4');
+	addMenu("show","show",1,'video','lesson4_handling_pulled_items','lesson4_handling_pulled_items','Handling Pulled Items','handling_pulled_items.mp4');
+	addMenu("hide","hide",1,'html','lesson4_activity_displaying_managing_inventory','lesson4_activity_displaying_managing_inventory','Activity: Displaying & Managing Inventory','');
+	
+	addMenu("hide","hide",0,'video','conclusion','','Conclusion','conclusion.mp4');
+	addMenu("show","show",1,'video','module_summary','conclusion','Module Summary','module_summary.mp4');
+	addMenu("hide","hide",0,'html','completion_record','','Completion Record','');
+	
+		
+	function addMenu(controls,prevnextbuttons,level,type,id, parentid, title,url){
+		objMenu[id] = new Object();
+		objMenu[id].level = level;
+		objMenu[id].type = type;
+		objMenu[id].title = title;
+		objMenu[id].parentid = parentid;
+		objMenu[id].url = url;
+		objMenu[id].completed = 0;
+		objMenu[id].controls = controls;
+		objMenu[id].prevnextbuttons = prevnextbuttons;
+		arrLessons.push(id);
+	}
+	
+	$( document ).ready(function() {
+		var videoPlayer = document.getElementById('myVideo');
+		initialiseMediaPlayer();
+		var seek = document.getElementById('seek');
+		seek.addEventListener('input', skipAhead);		
+		
+		jQuery(".media-controls").show();
+		jQuery("#play-button").show();
+		jQuery("#audio-on").show();
+		jQuery(".btnprev").hide();  
+		
+		jQuery(".maincontainer").hide(); 
+						
+		dialog = $( ".mainmenu" ).dialog({ autoOpen: false,width:350 ,height: 420, position: { my: "left bottom", at: "left top", of: $( "#btnhome" ) }});
+	
+		$( "#btnhome" ).click(function() {
+		  $( ".mainmenu" ).dialog( "open" );
+		  StatusCheck();
+		});
+		
+		if (local) {
+			
+			$( ".intro" ).load( "canvasjs/intro.html", function() {
+				  init();
+			});
+				
+		} else {
+			moScormApi = findScormApi();
+			if (moScormApi == null) {
+				alert('Could not locate the SCORM "API" object. No course progress will be saved! Please close all web browser windows and try again.');
+			};
+			
+			var msScormApiResult = moScormApi.LMSInitialize('');
+			if (msScormApiResult.toLowerCase() != 'true') {
+				alert('LMSInitialize returned "' + msScormApiResult + '"');
+			} else {
+				
+				studentname = moScormApi.LMSGetValue("cmi.core.student_name");
+				completedlessons = moScormApi.LMSGetValue("cmi.comments");
+				
+				//set completed lesson
+				arrCompleted = completedlessons.split(",");
+				for (i=0;i<=arrCompleted.length;i++) {
+					for (t=0;t<arrLessons.length;t++){	
+						if (arrLessons[t]==arrCompleted[i]) {
+							objMenu[arrLessons[t]].completed=1;
+						}
+					}
+				}
+				
+				var status = moScormApi.LMSGetValue("cmi.core.lesson_status");
+				if (status=="completed") {
+					for (t=0;t<arrLessons.length;t++){							
+						objMenu[arrLessons[t]].completed=1;						
+					}
+				}
+				
+				//get the latest id
+				for (t=0;t<arrLessons.length;t++){	
+					if (objMenu[arrLessons[t]].completed!=1) {
+						curid = arrLessons[t];
+						break;
+					}
+				}
+					
+				
+				$( ".intro" ).load( "canvasjs/intro.html", function() {
+				  init();				  
+				});			
+			}
+		}
+						
+		$(".btnround").on({
+		 "mouseover" : function() {
+			if($(this).find("img").data("on")==undefined){
+				$(this).find("img").data("on",$(this).find("img").attr("src"));
+			}
+			$(this).find("img").attr("src",$(this).find("img").attr("over"));
+		  },
+		  "mouseout" : function() {
+			$(this).find("img").attr("src",$(this).find("img").data("on"));
+		  }
+		});		
+			
+		$(".pnghover").on({
+		 "mouseover" : function() {
+			if($(this).data("on")==undefined){
+				$(this).data("on",this.src);
+			}
+			this.src = $(this).attr("over");
+		  },
+		  "mouseout" : function() {
+			this.src = $(this).data("on");
+		  }
+		});
+		
+		  		
+	})	
+	
+	function Page(id){
+		curid = id;
+		createjs.Sound.stop();
+		if (objMenu[id].controls=="show") {
+			jQuery(".media-controls").show();
+		} else {
+			mediaPlayer.pause();
+			jQuery(".media-controls").hide();
+		}
+		
+		if (objMenu[id].prevnextbuttons=="show") {
+			jQuery(".btnnext").show();
+			jQuery(".btnprev").show();
+		} else {
+			jQuery(".btnnext").hide();
+			jQuery(".btnprev").hide();
+		}
+				
+		if (objMenu[id].level!=0) {
+			jQuery(".locationtext").html(objMenu[objMenu[id].parentid].title);
+			jQuery(".yourlocation").show();
+		} else {
+			jQuery(".yourlocation").hide();
+		}
+		jQuery(".lessontittle").html(objMenu[id].title);
+		//objMenu[id].completed = 1;
+		
+		if (objMenu[id].type=="video") {
+			loadVideo("videos/"+objMenu[id].url);
+			jQuery('#myVideo').show();
+			jQuery('.canvas_holder').hide();
+		} else {
+			jQuery('#myVideo').hide();
+			
+			LoadPage(id);
+			jQuery('.canvas_holder').show();
+		}
+				
+		StatusCheck();
+		
+		$('.mainmenu').dialog('close');
+	}
+	
+	function LoadPage(id){
+		if (id=="completion_record") {
+			
+			if (local) {
+				$( ".canvas_holder" ).load( "canvasjs/"+id+".html", function() {
+					  //init();
+				});
+			} else {
+				var status = moScormApi.LMSGetValue("cmi.core.lesson_status");
+				
+				if (status=="completed") {
+					jQuery("#studentname").html(studentname);
+					jQuery("#cavas_holder").html(jQuery(".divcompleted").html());
+				} else {
+					
+					$( ".canvas_holder" ).html("");
+					$( ".canvas_holder" ).load( "canvasjs/"+id+".html", function() {
+					  //init();
+					});
+				}
+			}
+		} else {
+			$( ".canvas_holder" ).html("");
+			$( ".canvas_holder" ).load( "canvasjs/"+id+".html?t="+Math.random(), function() {
+			  init();
+			});
+			
+		}
+		
+	}
+	
+	function ActivityCompleted(id) {
+		for (t=0;t<arrLessons.length;t++){	
+			if (arrLessons[t]==id) {
+				objMenu[arrLessons[t]].completed=1;
+				
+				if (!local) {
+					completedlessons = moScormApi.LMSGetValue("cmi.comments");					
+					var arrCompleted = completedlessons.split(",");
+					if (!arrCompleted.includes(id)){
+						if (completedlessons=="") {
+							completedlessons = 	id;
+						} else {
+							completedlessons +="," + id;
+						}
+						moScormApi.LMSSetValue("cmi.comments",completedlessons);
+						moScormApi.LMSCommit();
+					}
+				} 
+		
+				StatusCheck();
+				jQuery(".btnnext").show();
+				jQuery(".btnprev").show();
+				break;
+			}
+		}
+	}
+  
+	function StatusCheck(){
+		for (i=0;i<arrLessons.length;i++){
+			if (arrLessons[i]==curid) {
+				jQuery("."+arrLessons[i]).find("a").find("span").html(chk_current);
+				jQuery("."+arrLessons[i]).addClass("menuactive");
+			} else {
+				jQuery("."+arrLessons[i]).removeClass("menuactive");
+				if (objMenu[arrLessons[i]].completed==1) {
+					jQuery("."+arrLessons[i]).find("a").find("span").html(chk_checked);
+				} else {
+					jQuery("."+arrLessons[i]).find("a").find("span").html(chk_empty);
+				}
+			}
+			
+		}	
+	}
+	
+	function nextPage(){
+		var curindex = 0; 
+		for (i=0;i<arrLessons.length;i++) {
+			if (arrLessons[i]==curid) {
+				curindex = i;
+				break;
+			}	
+		}
+		if (curindex<arrLessons.length){
+			curindex++;
+			curid = arrLessons[curindex];
+			Page(curid);
+		}
+		if (curindex<arrLessons.length-1) {
+			if (objMenu[arrLessons[curindex]].prevnextbuttons=="show") {
+				jQuery(".btnnext").show();
+			} else {
+				jQuery(".btnnext").hide();
+				jQuery(".btnprev").hide();
+			}
+		} else {
+			jQuery(".btnnext").hide();
+		}
+		jQuery(".btnprev").show();
+		
+	}
+	
+	function prevPage(){
+		var curindex = 0; 
+		for (i=0;i<arrLessons.length;i++) {
+			if (arrLessons[i]==curid) {
+				curindex = i;
+				break;
+			}	
+		}
+		if (curindex>0){
+			curindex--;
+			curid = arrLessons[curindex];
+			Page(curid);
+		} 
+		
+		if (curindex>0) {
+			if (objMenu[arrLessons[curindex]].prevnextbuttons=="show") {
+				jQuery(".btnprev").show();
+			} else {
+				jQuery(".btnprev").hide();
+				jQuery(".btnnext").hide();
+			}
+		} else {
+			jQuery(".btnprev").hide();
+		}
+		jQuery(".btnnext").show();
+		
+	}
+	
+	function Begin(){
+		createjs.Sound.removeAllSounds();
+		jQuery( ".intro").html("");
+		jQuery( ".intro").remove();
+		jQuery(".maincontainer").show(); 
+		Page(curid);
+	}
+	
+	function Complete(){
+		var checked = jQuery('#chk_completion').is(":checked");
+		if (!checked) {
+			alert("Click the checkbox then submit");	
+		} else {
+			var p = CalculatePercentage();
+			
+			if (p<100) {
+				jQuery(".percentcompleted").html(p);
+				jQuery(".acknowledgement1").hide();
+				jQuery(".acknowledgement2").show();
+			} else {
+				
+				jQuery("#studentname").html(studentname);
+				jQuery("#cavas_holder").html(jQuery(".divcompleted").html());				
+				
+				if (local) {
+					
+				} else {
+					var status = moScormApi.LMSGetValue("cmi.core.lesson_status");
+					if (status!="completed") {
+						sResponse = moScormApi.LMSSetValue("cmi.core.lesson_status","completed");
+						moScormApi.LMSCommit();
+					}
+				}
+				
+				
+			}
+			
+			
+			
+		}
+		
+	}
+	
+	function CalculatePercentage(){
+		var completed = 0;
+		for (i=0;i<arrLessons.length;i++){
+			if (objMenu[arrLessons[i]].completed==1) {
+				completed++;
+			}
+		}
+		
+		if (objMenu["completion_record"].completed!=1) {
+			completed++;
+		}
+		var p = Math.round((completed*100)/arrLessons.length);
+		return p;	
+	}
+	
+	function acknowledgement1(){
+		jQuery(".acknowledgement1").show();
+		jQuery(".acknowledgement2").hide();
+				
+	}
+	
+
+	
+// Variables to store handles to various required elements
+var mediaPlayer;
+var playPauseBtn;
+var muteBtn;
+var progressBar;
+
+function initialiseMediaPlayer() {
+	// Get a handle to the player
+	mediaPlayer = document.getElementById('myVideo');
+	
+	// Get handles to each of the buttons and required elements
+	playBtn = document.getElementById('play-button');
+	pauseBtn = document.getElementById('pause-button');
+	muteBtn = document.getElementById('mute-button');
+	progressBar = document.getElementById('progress-bar');
+
+	// Hide the browser's default controls
+	mediaPlayer.controls = false;
+	
+	// Add a listener for the timeupdate event so we can update the progress bar
+	mediaPlayer.addEventListener('timeupdate', updateProgressBar, false);
+
+	
+	//get total time of the video
+	mediaPlayer.addEventListener('loadedmetadata', function() {
+		
+		  const videoDuration = Math.round(mediaPlayer.duration);
+		  //seek.setAttribute('max', videoDuration);
+		 // progressBar.setAttribute('max', videoDuration);
+		  var time = formatTime(videoDuration);
+		  
+		  jQuery("#video-time").html('00:00 / '+ time.minutes+':'+time.seconds);
+		  
+		  mediaPlayer.play();
+		  
+		  //duration.innerText = `${time.minutes}:${time.seconds}`;
+		  //duration.setAttribute('datetime', `${time.minutes}m ${time.seconds}s`);
+	}, false);
+	
+	// Add a listener for the play and pause events so the buttons state can be updated
+	mediaPlayer.addEventListener('play', function() {
+		// Change the button to be a pause button
+		jQuery("#pause-button").show();
+		jQuery("#play-button").hide();
+		//changeButtonType(playPauseBtn, 'pause');
+	}, false);
+	mediaPlayer.addEventListener('pause', function() {
+		// Change the button to be a play button
+		jQuery("#pause-button").hide();
+		jQuery("#play-button").show();
+		//changeButtonType(playPauseBtn, 'play');
+	}, false);
+	
+	mediaPlayer.addEventListener('ended', function() { 
+		this.pause();
+		progressBar.value = 100;	
+		jQuery("#seek").val(100);
+		
+		objMenu[curid].completed = 1;
+		
+				if (!local) {
+					completedlessons = moScormApi.LMSGetValue("cmi.comments");					
+					var arrCompleted = completedlessons.split(",");
+					if (!arrCompleted.includes(curid)){
+						if (completedlessons=="") {
+							completedlessons = 	curid;
+						} else {
+							completedlessons +="," + curid;
+						}
+						moScormApi.LMSSetValue("cmi.comments",completedlessons);
+						moScormApi.LMSCommit();
+					}
+				}
+		
+		if (curid=="lesson1_what_furniture_processors_do") {
+			curid = "lesson1_introduction";
+			Page(curid);
+		} else if (curid=="lesson2_inspecting_furniture") {
+			curid = "lesson2_introduction";
+			Page(curid);
+		} else if (curid=="lesson3_processing_saleable_items") {
+			curid = "lesson3_introduction";
+			Page(curid);
+		} else if (curid=="lesson4_the_sales_floor") {
+			curid = "lesson4_introduction";
+			Page(curid);			
+		} else if (curid=="conclusion") {
+			curid = "module_summary";
+			Page(curid);
+		}
+	 
+	}, false);	
+}
+
+function togglePlayPause() {
+	// If the mediaPlayer is currently paused or has ended
+	if (mediaPlayer.paused || mediaPlayer.ended) {
+		// Change the button to be a pause button
+		jQuery("#pause-button").show();
+		jQuery("#play-button").hide();
+		//changeButtonType(playPauseBtn, 'pause');
+		// Play the media
+		mediaPlayer.play();
+	}
+	// Otherwise it must currently be playing
+	else {
+		// Change the button to be a play button
+		jQuery("#pause-button").hide();
+		jQuery("#play-button").show();
+		//changeButtonType(playPauseBtn, 'play');
+		// Pause the media
+		mediaPlayer.pause();
+	}
+}
+
+// Stop the current media from playing, and return it to the start position
+function stopPlayer() {
+	mediaPlayer.pause();
+	mediaPlayer.currentTime = 0;
+}
+
+// Changes the volume on the media player
+function changeVolume(direction) {
+	if (direction === '+') mediaPlayer.volume += mediaPlayer.volume == 1 ? 0 : 0.1;
+	else mediaPlayer.volume -= (mediaPlayer.volume == 0 ? 0 : 0.1);
+	mediaPlayer.volume = parseFloat(mediaPlayer.volume).toFixed(1);
+}
+
+// Toggles the media player's mute and unmute status
+function toggleMute() {
+	if (mediaPlayer.muted) {
+		// Change the cutton to be a mute button
+		jQuery("#audio-off").hide();
+		jQuery("#audio-on").show();
+		//changeButtonType(muteBtn, 'mute');
+		// Unmute the media player
+		mediaPlayer.muted = false;
+		createjs.Sound.volume=1;
+	}
+	else {
+		// Change the button to be an unmute button
+		createjs.Sound.volume=0;
+		jQuery("#audio-off").show();
+		jQuery("#audio-on").hide();
+		//changeButtonType(muteBtn, 'unmute');
+		// Mute the media player
+		mediaPlayer.muted = true;
+	}
+}
+
+// Replays the media currently loaded in the player
+function replayMedia() {
+	resetPlayer();
+	mediaPlayer.play();
+}
+
+// Update the progress bar
+function updateProgressBar() {
+	// Work out how much of the media has played via the duration and currentTime parameters
+	var percentage = Math.floor((100 / mediaPlayer.duration) * mediaPlayer.currentTime);
+	// Update the progress bar's value
+	if (!isNaN(percentage)) {
+		progressBar.value = percentage;
+		
+		jQuery("#seek").val(percentage);
+		
+		var timetotal = formatTime(Math.round(mediaPlayer.duration));
+		var timecurrent = formatTime(Math.round(mediaPlayer.currentTime));
+			  
+		jQuery("#video-time").html(timecurrent.minutes+':'+timecurrent.seconds + ' / '+ timetotal.minutes+':'+timetotal.seconds);
+			
+	} else {
+		percentage	= 0 ;
+	}
+	// Update the progress bar's text (for browsers that don't support the progress element)
+	//progressBar.innerHTML = percentage + '% played';
+	
+
+		  
+}
+// skipAhead jumps to a different point in the video when the progress bar
+// is clicked
+function skipAhead(event) {
+  const skipTo = event.target.dataset.seek
+    ? event.target.dataset.seek
+    : event.target.value;
+	
+	var percentage = Math.floor((skipTo / 100) * mediaPlayer.duration);
+	
+  mediaPlayer.currentTime = percentage;
+  progressBar.value = skipTo;
+  seek.value = skipTo;
+}
+
+
+
+// Updates a button's title, innerHTML and CSS class to a certain value
+function changeButtonType(btn, value) {
+	btn.title = value;
+	btn.innerHTML = value;
+	btn.className = value;
+}
+
+// Loads a video item into the media player
+function loadVideo(video) {
+	mediaPlayer.src = video;
+	mediaPlayer.load();
+}
+
+// Checks if the browser can play this particular type of file or not
+function canPlayVideo(ext) {
+	var ableToPlay = mediaPlayer.canPlayType('video/' + ext);
+	if (ableToPlay == '') return false;
+	else return true;
+}
+
+// Resets the media player
+function resetPlayer() {
+	// Reset the progress bar to 0
+	progressBar.value = 0;
+	// Move the media back to the start
+	mediaPlayer.currentTime = 0;
+	// Ensure that the play pause button is set as 'play'
+	//changeButtonType(playPauseBtn, 'play');
+}
+
+
+// formatTime takes a time length in seconds and returns the time in
+// minutes and seconds
+function formatTime(timeInSeconds) {
+  const result = new Date(timeInSeconds * 1000).toISOString().substr(11, 8);
+
+  return {
+    minutes: result.substr(3, 2),
+    seconds: result.substr(6, 2),
+  };
+}
+
+// LOCATE THE SCORM API
+findAPI = function (win) {
+	if ( (typeof(win) == 'undefined') || (win == null) ) {
+		return null;
+	} else {
+		while ((win.API == null) && (win.parent != null) && (win.parent != win)) {
+			win = win.parent;
+		}
+		return win.API;
+	}
+}; // findAPI
+findScormApi = function () {
+	var oApi = findAPI(window);
+	if (oApi == null) { // try opener
+		oApi = findAPI(window.opener);
+	}
+	if (oApi == null) { // try parent's opener
+		oApi = findAPI(parent.window.opener);
+	}
+	return oApi;
+}; // findScormApi
+var miMissingApiNagCounter = 3; // total number of times the learner will see the message
+verifyScormApiStillExists = function () {
+	if (moScormApi != null) { // then the SCORM API was successfully located at startup; verify that it STILL exists...
+		if (findScormApi() == null) {
+			if (miMissingApiNagCounter > 0) {
+				--miMissingApiNagCounter;
+				var sMsg = 'The SCORM "API" object was found when the course was started, but it is no longer available.';
+				sMsg += ' (Perhaps another web browser window was closed or navigated away?)';
+				sMsg += '\n\nNo course progress can be saved without this API connection to the learning management system.';
+				sMsg += ' Please close all web browser windows and try again.';
+				sMsg += ' Be careful to not close or use any web browser windows that your learning management system opens behind this course window.';
+				if (miMissingApiNagCounter > 1) {
+					sMsg += '\n\nNOTE: You will be reminded of this issue ' + miMissingApiNagCounter.toString() + ' more times.';
+				} else if (miMissingApiNagCounter == 1) { // only one more future notice
+					sMsg += '\n\nNOTE: You will be reminded of this issue only 1 more time.';
+				} else { // miMissingApiNagCounter is 0, no more future warnings
+					sMsg += '\n\nNOTE: You will not be reminded of this issue again, but that does NOT mean the issue was resolved!';
+					sMsg += ' YOUR PROGRESS WILL NOT BE SAVED. Please close all web browser windows and try again.';
+				}
+				alert(sMsg);
+			}
+		}
+	}
+}; // verifyScormApiStillExists
+var lastWarningSeenAtMillisends = 0;
+showWarning = function (sWarning) {
+	if (mbShowDebugAlerts || (((new Date()).getTime() - lastWarningSeenAtMillisends) > 1000))
+	{
+		var sMsg = 'Communication with the Learning Management System (LMS) may have failed:\n' + sWarning;
+		sMsg += '\n\nYOUR PROGRESS MAY NOT BE GETTING SAVED!\nPlease close all web browser windows, then try launching the course again.';
+		alert(sMsg);
+		lastWarningSeenAtMillisends = (new Date()).getTime();
+	}
+}; // showWarning
+
+	</script>
+<style>
+html,body {
+	padding:0;
+	margin:0;
+	width:100%;
+	height:100%;
+	font-size:100%;
+	font-family:Arial,Helvetica, Times;
+}
+.maincontainer {
+	width:100%;
+	max-width:992px;
+	margin:0 auto;
+}
+.intro {
+	width:100%;
+	max-width:992px;
+	margin:0 auto;
+}
+
+.mainheader {
+	min-height:65px;
+	background-color:#c5c5c5;
+	border-top-left-radius:40px;
+	border-top-right-radius:40px;
+	border-bottom:5px solid #999999;
+	border-bottom-style:ridge;
+	padding-left:40px;
+	padding-right:40px;
+	height:inherit;
+	padding-top:10px;
+	border-left:1px solid #000;
+	border-right:1px solid #000;
+	border-top:1px solid #000;
+}
+.headertitle {
+	font-size:20px;
+	font-style:italic;
+}
+.btnround {
+	text-decoration:none;
+	color:#404040;
+	font-size:12px;
+	font-weight:bold;
+	display:inline-block;
+	text-align:center;
+
+}
+
+.btnround:hover {
+	text-decoration:none;
+	color:#808080;
+}
+.zeropadding {
+	padding:0;
+	margin:0;	
+}
+.contentitle {
+	padding:10px;
+	border-left:1px solid #000;	
+	border-right:1px solid #000;	
+}
+#myVideo {
+	width:100%;
+	min-height:200px;
+	height:auto;
+	
+}
+#pause-button, #audio-off{
+	display:none;	
+}
+#play-button, #audio-on{
+	display:none;	
+}
+.media-controls {
+	position:relative;
+	display:inline-block;
+	width:370px;
+	min-height:50px;	
+}
+#video-time {
+	font-size:12px;
+	font-weight:bold;
+}
+progress {
+	font-size:12px;
+	width:100%;
+	height:12px;
+	border:none;
+	margin-right:5px;
+	background:#fff;
+	border:1px solid #000;
+	border-radius:4px;
+}
+
+progress::-webkit-progress-value {
+  background: #fff;
+}
+
+progress::-moz-progress-bar {
+  background: blue;
+}
+
+progress::-webkit-progress-value {
+  background: #999999;
+}
+
+progress::-webkit-progress-bar {
+  background: #fff;
+}
+
+.maincontent {
+	position:relative;
+	border-left:1px solid #000;
+	border-right:1px solid #000;	
+}
+
+.mainmenu {
+	position:absolute;
+	background-color:#fff;
+	width:400px;
+	height:500px;	
+}
+.mainmenu ul{
+	padding:0;
+	margin:0;
+	list-style:none;
+}
+.mainmenu ul li ul{
+	padding:0;
+	margin:0;
+	list-style:none;
+	padding-left:20px;
+}
+.menu a {
+	text-decoration:none;
+	font-size:12px;
+	font-weight:bold;	
+}
+
+.menu a:hover {
+	text-decoration:none;
+}
+
+.menu a span {
+	font-size:14px;
+	padding:2px;
+	margin-right:5px;
+}
+
+.menuactive > a{
+	color:#FF0000;	
+}
+
+
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+}
+input[type=range]:focus {
+  outline: none;
+}
+
+input[type=range]:::-moz-range-track {
+  width: 100%;
+  height: 13px;
+  cursor: pointer;
+  background:none;
+}
+
+input[type=range]::-moz-range-thumb {	
+  height: 13px;
+  width: 26px;
+  background: url('images/btn_progress_dragger.png') no-repeat;
+  cursor: pointer;
+  padding:0;
+  margin:0;
+  padding-top:8px;
+  -webkit-appearance: none;
+  border:none;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 13px;
+  cursor: pointer;
+  background:none;
+}
+input[type=range]::-webkit-slider-thumb {
+  height: 13px;
+  width: 26px;
+  background: url('images/btn_progress_dragger.png') no-repeat;
+  cursor: pointer;
+  -webkit-appearance: none;  
+ 
+}
+
+input[type=range]::-ms-thumb {
+  height: 13px;
+  width: 26px;
+  background: url('images/btn_progress_dragger.png') no-repeat;
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+
+input[type=range]::-ms-track {
+	position:absolute;
+	margin:0;
+	padding:0;
+	color: transparent;
+}
+
+.mainfooter {
+	background-color:#cbcbcb;
+	border:1px solid #000;
+	padding-top:5px;	
+}
+
+.cavas_holder {
+	position:relative;	
+}
+
+.acknowledgement_bg {
+	background-image: url('images/bg.png');
+	background-size:cover;
+	width:100%;
+	min-height:200px;
+}
+
+</style>   
+</head>
+
+<body>
+    	<div class="intro">
+        
+        </div>
+<div class="maincontainer">
+
+        
+	<div class="mainheader">
+        	<div class="row zeropadding">
+            	<div class="col-10 zeropadding text-center">
+        			<span class="headertitle">Goodwill's Good Flow Training: Furniture Processor</span>
+                </div>
+                <div class="col-2 zeropadding text-center">
+                	<a href="#" class="btnround" data-toggle="modal" data-target="#helpModal">
+        			<img class="pnghover" src="images/btn_help.png" over="images/btn_help_over.png" /><br>HELP
+                    </a>                    
+                </div>
+            </div>        
+    </div>
+    
+    
+    <div class="maincontent pb-2">        
+    	<div class="contentitle">
+        	<span class="yourlocation"><strong>>> Your Location:</strong> <span class="locationtext">Lesson 1: What Furniture Processors Do</span></span>&nbsp;<br><br>
+			
+            <span class="lessontittle">Lesson 1: Introduction</span>
+
+        </div>
+    	<video id="myVideo" controls>
+            <source src="" type="video/mp4" />
+            <p>Your browser does not support the video tag.</p>
+        </video>
+        
+        <div id="cavas_holder" class="canvas_holder">
+            
+        </div>
+            
+    </div> <!-- eof main content -->
+    
+    <div class="mainfooter">
+    	<div class="row zeropadding">
+        	<div class="col-2 zeropadding pl-2">
+            	<a href="#" class="btnround" id="btnhome">
+        			<img class="pnghover"  src="images/btn_home.png" over="images/btn_home_over.png" /><br>HOME
+              </a> 
+            </div>
+            
+            <div class="col-8 zeropadding">
+            	
+            	<div class="text-center" style="width:70px; display:inline-block">
+                      <a href="#" class="btnround" id="audio-on"  onclick='toggleMute("true");'>
+                        <img class="pnghover"  src="images/btn_audio_on.png" over="images/btn_audio_on_over.png" /><br>(AUDIO ON)
+                    </a>
+                    <a href="#" class="btnround" id="audio-off"  onclick='toggleMute("false");'>
+                        <img class="pnghover"  src="images/btn_audio_off.png" over="images/btn_audio_off_over.png" /><br>(MUTED)
+                    </a>  
+             	</div>
+             
+             <div class="media-controls">   
+                <div class="text-center" style="width:60px; display:inline-block">                              
+                      <a href="#" class="btnround" id="play-button"  onclick='togglePlayPause();'>
+                        <img class="pnghover" src="images/btn_play.png" over="images/btn_play_over.png" /><br>PLAY
+                    </a>
+                    <a href="#" class="btnround" id="pause-button"  onclick='togglePlayPause();'>
+                        <img class="pnghover" src="images/btn_pause.png" over="images/btn_pause_over.png" /><br>PAUSE
+                    </a>
+             	</div>
+                                
+                <div style="width:200px; display:inline-block; position:relative; height:30px">                	
+                       <progress id='progress-bar' min='0' max='100' value='0' style="position:absolute; width:100%"></progress>
+          				<input class="seek" id="seek" value="0" min="0" max="100" type="range" step="1"  style="position:absolute; width:100%">          				
+             	</div>
+                
+                <div style="width:100px; display:inline-block; position:relative; top:-20px;">
+                   	<div id="video-time">0:00 / 00:00</div>
+             	</div>
+              
+              </div> <!-- eof media controls --> 
+         
+            </div>
+            
+            
+            
+            <div class="col-2 zeropadding">
+            	<div class="row zeropadding">
+                	<div class="col-6 zeropadding text-center">
+                    	<a href="#" class="btnround btnprev" onClick="prevPage(); return false;">
+                            <img class="pnghover" src="images/btn_prev.png" over="images/btn_prev_over.png" /><br>BACK
+                        </a> 
+                    </div>
+                    <div class="col-6 zeropadding text-center">
+                    	<a href="#" class="btnround btnnext"  onClick="nextPage(); return false;">
+                            <img class="pnghover" src="images/btn_next.png" over="images/btn_next_over.png" /><br>NEXT
+                        </a> 
+                    </div>                
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    
+</div>
+
+
+    <div class="mainmenu" title="Table of Contents">
+        <ul>
+        	<li class='menu module_introduction'><a href="#" onClick="Page('module_introduction'); return false;" ><span class="statusicon"></span>Module Introduction</a></li>
+            <li class='menu lesson1_what_furniture_processors_do'><a href="#" onClick="Page('lesson1_what_furniture_processors_do'); return false;" ><span class="statusicon"></span>Lesson 1: What Furniture Processors Do</a>
+            	<ul>
+                	<li class='menu lesson1_introduction'><a href="#" onClick="Page('lesson1_introduction'); return false;" ><span class="statusicon"></span>Lesson 1: Introduction</a></li>
+                    <li class='menu lesson1_furniture_processor_work_flow'><a href="#" onClick="Page('lesson1_furniture_processor_work_flow'); return false;" ><span class="statusicon"></span>Furniture Processor Work Flow</a></li>
+                    <li class='menu lesson1_types_of_furniture_items'><a href="#" onClick="Page('lesson1_types_of_furniture_items'); return false;" ><span class="statusicon"></span>Types of Furniture Items</a></li>
+                    <li class='menu lesson1_getting_started'><a href="#" onClick="Page('lesson1_getting_started'); return false;" ><span class="statusicon"></span>Getting Started</a></li>                   
+                    <li class='menu lesson1_organizing_your_workstation'><a href="#" onClick="Page('lesson1_organizing_your_workstation'); return false;" ><span class="statusicon"></span>Organizing Your Workstation</a></li>
+                    <li class='menu lesson1_activity_starting_your_day'><a href="#" onClick="Page('lesson1_activity_starting_your_day'); return false;" ><span class="statusicon"></span>Activity: Starting Your Day</a></li>
+                </ul>
+            </li>
+            
+            <li class='menu lesson2_inspecting_furniture'><a href="#" onClick="Page('lesson2_inspecting_furniture'); return false;" ><span class="statusicon"></span>Lesson 2: Inspecting Furniture</a>
+            	<ul>
+                	<li class='menu lesson2_introduction'><a href="#" onClick="Page('lesson2_introduction'); return false;" ><span class="statusicon"></span>Lesson 2: Introduction</a></li>
+                    <li class='menu lesson2_inspecting_furniture2'><a href="#" onClick="Page('lesson2_inspecting_furniture2'); return false;" ><span class="statusicon"></span>Inspecting Furniture</a></li>
+                    <li class='menu lesson2_unacceptable_items'><a href="#" onClick="Page('lesson2_unacceptable_items'); return false;" ><span class="statusicon"></span>Unacceptable Items</a></li>
+                    <li class='menu lesson2_activity_stay_or_go'><a href="#" onClick="Page('lesson2_activity_stay_or_go'); return false;" ><span class="statusicon"></span>Activity: Stay or Go?</a></li>                   
+                </ul>
+            </li>
+            
+            <li class='menu lesson3_processing_saleable_items'><a href="#" onClick="Page('lesson3_processing_saleable_items'); return false;" ><span class="statusicon"></span>Lesson 3: Processing Saleable Items</a>
+            	<ul>
+                    <li class='menu lesson3_introduction'><a href="#" onClick="Page('lesson3_introduction'); return false;" ><span class="statusicon"></span>Lesson 3: Introduction</a></li>
+                    <li class='menu lesson3_deciding_on_the_right_price'><a href="#" onClick="Page('lesson3_deciding_on_the_right_price'); return false;" ><span class="statusicon"></span>Deciding on the Right Price</a></li>
+                    <li class='menu lesson3_sales_tickets'><a href="#" onClick="Page('lesson3_sales_tickets'); return false;" ><span class="statusicon"></span>Sales Tickets</a></li>
+                    <li class='menu lesson3_final_check'><a href="#" onClick="Page('lesson3_final_check'); return false;" ><span class="statusicon"></span>Final Check</a></li>
+                    <li class='menu lesson3_activity_pricing_furniture'><a href="#" onClick="Page('lesson3_activity_pricing_furniture'); return false;" ><span class="statusicon"></span>Activity: Pricing Furniture</a></li>
+                </ul>
+            </li>
+            
+            <li class='menu lesson4_the_sales_floor'><a href="#" onClick="Page('lesson4_the_sales_floor'); return false;" ><span class="statusicon"></span>Lesson 4: The Sales Floor</a>
+            	<ul>
+                	<li class='menu lesson4_introduction'><a href="#" onClick="Page('lesson4_introduction'); return false;" ><span class="statusicon"></span>Lesson 4: Introduction</a></li>
+                    <li class='menu lesson4_sales_floor_inventory'><a href="#" onClick="Page('lesson4_sales_floor_inventory'); return false;" ><span class="statusicon"></span>Sales Floor Inventory</a></li>
+                    <li class='menu lesson4_rotating_inventory'><a href="#" onClick="Page('lesson4_rotating_inventory'); return false;" ><span class="statusicon"></span>Rotating Inventory</a></li>
+                    <li class='menu lesson4_handling_pulled_items'><a href="#" onClick="Page('lesson4_handling_pulled_items'); return false;" ><span class="statusicon"></span>Handling Pulled Items</a></li>
+                    <li class='menu lesson4_activity_displaying_managing_inventory'><a href="#" onClick="Page('lesson4_activity_displaying_managing_inventory'); return false;" ><span class="statusicon"></span>Activity: Displaying & Managing Inventory</a></li>
+                </ul>
+            </li>
+            
+            <li class='menu conclusion'><a href="#" onClick="Page('conclusion'); return false;" ><span class="statusicon"></span>Conclusion</a>
+            	<ul>
+                	<li class='menu module_summary'><a href="#" onClick="Page('module_summary'); return false;" ><span class="statusicon"></span>Module Summary</a></li>                    
+                </ul>
+            </li>
+            
+            <li class='menu completion_record'><a href="#" onClick="Page('completion_record'); return false;" ><span class="statusicon"></span>Completion Record</a></li>
+        </ul>
+
+        </div>
+
+<!-- The Modal -->
+<div id="helpModal" class="modal">
+
+  <!-- The Close Button -->
+  <span class="close">&times;</span>
+
+  <!-- Modal Content (The Image) -->
+  <img class="modal-content" id="img01" src="images/help.jpg">
+
+  <!-- Modal Caption (Image Text) -->
+  <div id="caption"></div>
+</div>
+
+
+        	<div class="divcompleted" style="display:none">
+            <div style="width:100%;background-image: url('images/bg.png');background-size:cover;">
+                	<div style="max-width:700px; margin:0 auto; padding:20px;"><br><br>
+                   
+	<strong>Congratulations!</strong> You have successfully completed the <strong id="coursename">Goodwill's Good Flow Training: Furniture Processor </strong> module.<br>
+Your notice of completion has been recorded.
+<br><br><br>
+
+Name: <strong id="studentname"></strong><br><br>
+Module: <strong>Furniture Processor</strong><br><br>
+                    
+                    </div>
+                    
+                    
+					</div>         	
+            </div>
+            </div>
+            
+                    
+</body>
+</html>
